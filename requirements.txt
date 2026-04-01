@@ -1,0 +1,9 @@
+# Core segmentation libraries
+numpy
+opencv-python
+matplotlib
+
+# Web API (backend)
+fastapi
+uvicorn
+python-multipart

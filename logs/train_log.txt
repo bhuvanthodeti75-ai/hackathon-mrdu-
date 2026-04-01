@@ -1,0 +1,27 @@
+Training Logs
+=============
+Epoch [1/25] - Loss: 1.4985
+Epoch [2/25] - Loss: 1.2289
+Epoch [3/25] - Loss: 1.0172
+Epoch [4/25] - Loss: 0.7924
+Epoch [5/25] - Loss: 0.6563
+Epoch [6/25] - Loss: 0.5711
+Epoch [7/25] - Loss: 0.4207
+Epoch [8/25] - Loss: 0.4013
+Epoch [9/25] - Loss: 0.2780
+Epoch [10/25] - Loss: 0.2823
+Epoch [11/25] - Loss: 0.2089
+Epoch [12/25] - Loss: 0.1615
+Epoch [13/25] - Loss: 0.1305
+Epoch [14/25] - Loss: 0.0994
+Epoch [15/25] - Loss: 0.1250
+Epoch [16/25] - Loss: 0.1029
+Epoch [17/25] - Loss: 0.0848
+Epoch [18/25] - Loss: 0.0575
+Epoch [19/25] - Loss: 0.0790
+Epoch [20/25] - Loss: 0.0526
+Epoch [21/25] - Loss: 0.0100
+Epoch [22/25] - Loss: 0.0141
+Epoch [23/25] - Loss: 0.0100
+Epoch [24/25] - Loss: 0.0259
+Epoch [25/25] - Loss: 0.0100

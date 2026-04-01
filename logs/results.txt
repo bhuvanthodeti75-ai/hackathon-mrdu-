@@ -1,0 +1,4 @@
+Evaluation Results
+===================
+Total Test Images: 5
+Mean IoU Score: 0.8367
