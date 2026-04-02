@@ -1,6 +1,6 @@
 # 🚙 Offroad Semantic Scene Segmentation
 
-![Application Banner](https://images.unsplash.com/photo-1541447271487-09612b3f49f7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80) 
+![Application Banner](https://my.spline.design/nexbotrobotcharacterconcept-i2Bc8ACvcm2XtXQlX7i3HZiI/) 
 *(Note: Replace with an actual screenshot of the Spline UI)*
 
 A blazing-fast, serverless, web-based semantic segmentation platform designed for offroad and unstructured environments. Built with a futuristic glassmorphism UI, a 3D interactive background (Spline), and natively integrated with **InsForge** for comprehensive cloud tracking and analytics.
