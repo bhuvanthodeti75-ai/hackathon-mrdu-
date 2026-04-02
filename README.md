@@ -3,7 +3,7 @@
 
 A blazing-fast, serverless, web-based semantic segmentation platform designed for offroad and unstructured environments. Built with a futuristic glassmorphism UI, a 3D interactive background (Spline), and natively integrated with **InsForge** for comprehensive cloud tracking and analytics.
 
-**🔗 Live Demo:** [https://ur5egicb.insforge.site](https://ur5egicb.insforge.site)
+**🔗 Live Demo:** [https://ur5egicb.insforge.site](https://automationeye.insforge.site)
 
 ---
 
