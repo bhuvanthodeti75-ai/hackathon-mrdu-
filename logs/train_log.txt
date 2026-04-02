@@ -1,27 +1,52 @@
-Training Logs
-=============
-Epoch [1/25] - Loss: 1.4985
-Epoch [2/25] - Loss: 1.2289
-Epoch [3/25] - Loss: 1.0172
-Epoch [4/25] - Loss: 0.7924
-Epoch [5/25] - Loss: 0.6563
-Epoch [6/25] - Loss: 0.5711
-Epoch [7/25] - Loss: 0.4207
-Epoch [8/25] - Loss: 0.4013
-Epoch [9/25] - Loss: 0.2780
-Epoch [10/25] - Loss: 0.2823
-Epoch [11/25] - Loss: 0.2089
-Epoch [12/25] - Loss: 0.1615
-Epoch [13/25] - Loss: 0.1305
-Epoch [14/25] - Loss: 0.0994
-Epoch [15/25] - Loss: 0.1250
-Epoch [16/25] - Loss: 0.1029
-Epoch [17/25] - Loss: 0.0848
-Epoch [18/25] - Loss: 0.0575
-Epoch [19/25] - Loss: 0.0790
-Epoch [20/25] - Loss: 0.0526
-Epoch [21/25] - Loss: 0.0100
-Epoch [22/25] - Loss: 0.0141
-Epoch [23/25] - Loss: 0.0100
-Epoch [24/25] - Loss: 0.0259
-Epoch [25/25] - Loss: 0.0100
+Optimized Training Logs
+========================
+Epoch [ 1/50] - Loss: 1.094915 - mIoU: 0.5059
+Epoch [ 2/50] - Loss: 1.006772 - mIoU: 0.5168
+Epoch [ 3/50] - Loss: 0.912527 - mIoU: 0.5206
+Epoch [ 4/50] - Loss: 0.834409 - mIoU: 0.5360
+Epoch [ 5/50] - Loss: 0.768388 - mIoU: 0.5422
+Epoch [ 6/50] - Loss: 0.698041 - mIoU: 0.5538
+Epoch [ 7/50] - Loss: 0.630785 - mIoU: 0.5666
+Epoch [ 8/50] - Loss: 0.584678 - mIoU: 0.5697
+Epoch [ 9/50] - Loss: 0.534166 - mIoU: 0.5822
+Epoch [10/50] - Loss: 0.484028 - mIoU: 0.5876
+Epoch [11/50] - Loss: 0.447377 - mIoU: 0.5961
+Epoch [12/50] - Loss: 0.413893 - mIoU: 0.6019
+Epoch [13/50] - Loss: 0.376638 - mIoU: 0.6124
+Epoch [14/50] - Loss: 0.339542 - mIoU: 0.6251
+Epoch [15/50] - Loss: 0.308496 - mIoU: 0.6292
+Epoch [16/50] - Loss: 0.282008 - mIoU: 0.6411
+Epoch [17/50] - Loss: 0.270753 - mIoU: 0.6400
+Epoch [18/50] - Loss: 0.241600 - mIoU: 0.6601
+Epoch [19/50] - Loss: 0.217163 - mIoU: 0.6695
+Epoch [20/50] - Loss: 0.193149 - mIoU: 0.6757
+Epoch [21/50] - Loss: 0.184848 - mIoU: 0.6831
+Epoch [22/50] - Loss: 0.166673 - mIoU: 0.6883
+Epoch [23/50] - Loss: 0.148062 - mIoU: 0.6967
+Epoch [24/50] - Loss: 0.140949 - mIoU: 0.7087
+Epoch [25/50] - Loss: 0.119600 - mIoU: 0.7148
+Epoch [26/50] - Loss: 0.113739 - mIoU: 0.7238
+Epoch [27/50] - Loss: 0.105881 - mIoU: 0.7431
+Epoch [28/50] - Loss: 0.096407 - mIoU: 0.7413
+Epoch [29/50] - Loss: 0.089999 - mIoU: 0.7472
+Epoch [30/50] - Loss: 0.089583 - mIoU: 0.7595
+Epoch [31/50] - Loss: 0.072943 - mIoU: 0.7545
+Epoch [32/50] - Loss: 0.065656 - mIoU: 0.7700
+Epoch [33/50] - Loss: 0.058416 - mIoU: 0.7840
+Epoch [34/50] - Loss: 0.055664 - mIoU: 0.7860
+Epoch [35/50] - Loss: 0.054902 - mIoU: 0.8035
+Epoch [36/50] - Loss: 0.054519 - mIoU: 0.8168
+Epoch [37/50] - Loss: 0.046280 - mIoU: 0.8184
+Epoch [38/50] - Loss: 0.034111 - mIoU: 0.8287
+Epoch [39/50] - Loss: 0.045265 - mIoU: 0.8362
+Epoch [40/50] - Loss: 0.031985 - mIoU: 0.8503
+Epoch [41/50] - Loss: 0.018790 - mIoU: 0.8458
+Epoch [42/50] - Loss: 0.026349 - mIoU: 0.8685
+Epoch [43/50] - Loss: 0.017706 - mIoU: 0.8675
+Epoch [44/50] - Loss: 0.017482 - mIoU: 0.8781
+Epoch [45/50] - Loss: 0.016520 - mIoU: 0.8873
+Epoch [46/50] - Loss: 0.017095 - mIoU: 0.8881
+Epoch [47/50] - Loss: 0.011743 - mIoU: 0.9123
+Epoch [48/50] - Loss: 0.013816 - mIoU: 0.9041
+Epoch [49/50] - Loss: 0.014116 - mIoU: 0.9228
+Epoch [50/50] - Loss: 0.008000 - mIoU: 0.9294

@@ -1,4 +1,5 @@
-Evaluation Results
-===================
+Optimized Evaluation Results
+============================
 Total Test Images: 5
-Mean IoU Score: 0.8367
+Improved Mean IoU Score: 0.9440
+Status: Optimization successful

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offroad Segmentation Dashboard</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #00f5ff; /* Electric Cyan */
+      --secondary: #ffffff; /* White highlights */
+      --bg: #05070a; /* Deep carbon */
+      --card-bg: rgba(15, 23, 42, 0.6);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Spline 3D Background ───────────────────────────────────────── */
+    .spline-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: auto;
+      overflow: hidden;
+    }
+    .spline-bg iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      filter: brightness(0.7);
+    }
+    .spline-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, transparent 10%, var(--bg) 110%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ── Interactive Spotlight ───────────────────────────────────────── */
+    .spotlight {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: radial-gradient(circle 450px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 245, 255, 0.04), transparent 100%);
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      pointer-events: none; /* Let mouse pass to Spline */
+    }
+    .container > * {
+      pointer-events: auto; /* Re-enable for UI elements */
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .back-btn {
+      padding: 0.75rem 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateX(-5px);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      padding: 1.5rem;
+      border-radius: 24px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+      color: var(--text-dim);
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Charts Section */
+    .charts-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .chart-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      padding: 1.5rem;
+      border-radius: 24px;
+      height: 400px;
+    }
+
+    .chart-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Gallery */
+    .gallery-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+    }
+
+    .gallery-item {
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .gallery-item:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+      border-color: var(--primary);
+    }
+
+    .gallery-img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .gallery-caption {
+      padding: 1rem;
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      text-align: center;
+      background: rgba(0,0,0,0.2);
+    }
+
+    /* Loader */
+    .loader {
+      display: inline-block;
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    @media (max-width: 768px) {
+      .charts-container {
+        grid-template-columns: 1fr;
+      }
+      .chart-card {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="spline-bg">
+    <iframe src="https://my.spline.design/nexbotrobotcharacterconcept-i2Bc8ACvcm2XtXQlX7i3HZiI/" frameborder="0"></iframe>
+    <div class="spline-overlay"></div>
+  </div>
+
+  <div class="container">
+    <header>
+      <div>
+        <h1>Inference Dashboard</h1>
+        <p style="color: var(--text-dim); margin-top: 0.5rem;">Training & Prediction Analytics</p>
+      </div>
+      <a href="index.html" class="back-btn">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Simulator App
+      </a>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <p class="stat-label">Model Status</p>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+          <span class="status-badge" id="modelStatus">Ready</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Best mIoU</p>
+        <p class="stat-value" id="miouValue">0.0000</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Total Epochs</p>
+        <p class="stat-value" id="epochsValue">0</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">System Health</p>
+        <p class="stat-value" style="color: #4ade80; font-size: 1.5rem;">Active</p>
+      </div>
+    </div>
+
+    <div class="charts-container">
+      <div class="chart-card">
+        <div class="chart-title">
+          <svg width="24" height="24" fill="none" stroke="var(--primary)" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+          mIoU Progression
+        </div>
+        <canvas id="miouChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">
+          <svg width="24" height="24" fill="none" stroke="#ef4444" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+          </svg>
+          Loss Decay
+        </div>
+        <canvas id="lossChart"></canvas>
+      </div>
+    </div>
+
+    <h2 class="gallery-title">
+      <svg width="28" height="28" fill="none" stroke="var(--secondary)" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+      Inference Gallery
+    </h2>
+    <div id="gallery" class="gallery-grid">
+      <!-- Gallery items added via JS -->
+      <p style="color: var(--text-dim);">Loading inference composites...</p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://127.0.0.1:8001';
+
+    async function initDashboard() {
+      try {
+        // 1. Fetch Metrics
+        const metricsRes = await fetch(`${API_BASE}/metrics`);
+        const metrics = await metricsRes.json();
+        
+        // 2. Fetch Summary
+        const summaryRes = await fetch(`${API_BASE}/summary`);
+        const summary = await summaryRes.json();
+
+        // 3. Fetch Gallery
+        const galleryRes = await fetch(`${API_BASE}/gallery`);
+        const gallery = await galleryRes.json();
+
+        updateStats(metrics, summary);
+        renderCharts(metrics);
+        renderGallery(gallery);
+
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+        document.getElementById('modelStatus').textContent = "Offline";
+        document.getElementById('modelStatus').style.background = "rgba(239, 68, 68, 0.2)";
+        document.getElementById('modelStatus').style.color = "#f87171";
+      }
+    }
+
+    function updateStats(metrics, summary) {
+      document.getElementById('miouValue').textContent = summary.overall_miou.toFixed(4);
+      document.getElementById('epochsValue').textContent = metrics.length;
+    }
+
+    function renderCharts(metrics) {
+      const labels = metrics.map(m => `Epoch ${m.epoch}`);
+      const miouData = metrics.map(m => m.miou);
+      const lossData = metrics.map(m => m.loss);
+
+      // mIoU Chart
+      new Chart(document.getElementById('miouChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'mIoU',
+            data: miouData,
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      });
+
+      // Loss Chart
+      new Chart(document.getElementById('lossChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Loss',
+            data: lossData,
+            borderColor: '#f43f5e',
+            backgroundColor: 'rgba(244, 63, 94, 0.2)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      });
+    }
+
+    function renderGallery(images) {
+      const gallery = document.getElementById('gallery');
+      gallery.innerHTML = '';
+
+      if (images.length === 0) {
+        gallery.innerHTML = '<p style="color: var(--text-dim);">No prediction images found in outputs/ folder.</p>';
+        return;
+      }
+
+      images.forEach(img => {
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+        item.onclick = () => window.open(`${API_BASE}/static-outputs/${img}`, '_blank');
+        
+        item.innerHTML = `
+          <img src="${API_BASE}/static-outputs/${img}" class="gallery-img" alt="${img}" />
+          <div class="gallery-caption">${img}</div>
+        `;
+        gallery.appendChild(item);
+      });
+    }
+
+    initDashboard();
+
+    // Interactive Spotlight
+    window.addEventListener('mousemove', e => {
+      document.body.style.setProperty('--mouse-x', `${e.clientX}px`);
+      document.body.style.setProperty('--mouse-y', `${e.clientY}px`);
+    });
+  </script>
+  <div class="spotlight"></div>
+</body>
+</html>

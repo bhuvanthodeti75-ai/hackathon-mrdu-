@@ -7,22 +7,56 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
+    /* ── Spline 3D Background ───────────────────────────────────────── */
+    .spline-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: auto;
+      overflow: hidden;
+    }
+    .spline-bg iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      filter: brightness(0.8);
+    }
+    .spline-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, transparent 10%, var(--bg) 110%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ── Interactive Spotlight ───────────────────────────────────────── */
+    .spotlight {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: radial-gradient(circle 400px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 245, 255, 0.05), transparent 100%);
+    }
+
     /* ── Reset & Base ─────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0b0f1a;
-      --surface:   #131929;
-      --surface2:  #1a2236;
-      --border:    #263050;
-      --accent:    #4f8ef7;
-      --accent2:   #38e8c5;
-      --text:      #e2e8f0;
-      --muted:     #7b8ab8;
-      --success:   #3ddc97;
-      --error:     #f87171;
-      --radius:    14px;
-      --shadow:    0 8px 32px rgba(0,0,0,0.45);
+      --bg:        #05070a; /* Deeper carbon */
+      --surface:   rgba(15, 23, 42, 0.6); /* More transparent glass */
+      --surface2:  rgba(30, 41, 59, 0.7);
+      --border:    rgba(255, 255, 255, 0.1);
+      --accent:    #00f5ff; /* Electric Cyan */
+      --accent2:   #ffffff; /* Pure white highlights */
+      --text:      #f8fafc;
+      --muted:     #94a3b8;
+      --success:   #00ff88;
+      --error:     #ff4d4d;
+      --radius:    20px;
+      --shadow:    0 20px 50px rgba(0,0,0,0.6);
     }
 
     html, body {
@@ -48,13 +82,17 @@
     /* ── Layout ──────────────────────────────────────────────────────── */
     .wrapper {
       position: relative;
-      z-index: 1;
+      z-index: 3;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 48px 16px 64px;
       gap: 40px;
+      pointer-events: none; /* Allow mouse to pass to Spline */
+    }
+    .wrapper > * {
+      pointer-events: auto; /* Re-enable for UI elements */
     }
 
     /* ── Header ──────────────────────────────────────────────────────── */
@@ -93,21 +131,24 @@
     /* ── Upload Card ─────────────────────────────────────────────────── */
     .upload-card {
       width: 100%;
-      max-width: 600px;
+      max-width: 650px;
       background: var(--surface);
-      border: 2px dashed var(--border);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 48px 32px;
+      padding: 64px 32px;
       text-align: center;
       cursor: pointer;
-      transition: border-color .25s, background .25s, transform .2s;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
+      box-shadow: var(--shadow);
     }
     .upload-card:hover,
     .upload-card.drag-over {
       border-color: var(--accent);
       background: var(--surface2);
-      transform: translateY(-2px);
+      transform: translateY(-5px) scale(1.01);
+      box-shadow: 0 30px 60px rgba(0, 245, 255, 0.1);
     }
     .upload-card input[type="file"] {
       position: absolute;
@@ -118,9 +159,13 @@
       height: 100%;
     }
     .upload-icon {
-      font-size: 48px;
-      margin-bottom: 14px;
-      filter: drop-shadow(0 0 12px rgba(79,142,247,.4));
+      font-size: 64px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 0 15px rgba(0, 245, 255, 0.5));
+      transition: transform 0.3s ease;
+    }
+    .upload-card:hover .upload-icon {
+      transform: scale(1.1) rotate(5deg);
     }
     .upload-label {
       font-size: 16px;
@@ -279,20 +324,120 @@
       border-radius: 3px;
       flex-shrink: 0;
     }
+    .camera-container {
+      width: 100%;
+      max-width: 600px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: var(--shadow);
+    }
+    #video {
+      width: 100%;
+      border-radius: 8px;
+      background: #000;
+      transform: scaleX(-1); /* Mirror effect */
+    }
+    .camera-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .btn-secondary {
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+    .tabs {
+      display: flex;
+      gap: 20px;
+      margin-bottom: -20px;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      transition: all .2s;
+    }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    #cameraSection { display: none; }
+    .url-container {
+      width: 100%;
+      max-width: 600px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      display: none; /* Hidden by default */
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: var(--shadow);
+    }
+    .url-input-group {
+      display: flex;
+      gap: 12px;
+    }
+    .url-input {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .url-input:focus { border-color: var(--accent); }
   </style>
 </head>
 <body>
+  <div class="spline-bg">
+    <iframe src="https://my.spline.design/nexbotrobotcharacterconcept-i2Bc8ACvcm2XtXQlX7i3HZiI/" frameborder="0"></iframe>
+    <div class="spline-overlay"></div>
+  </div>
 <div class="wrapper">
 
   <!-- Header -->
   <header>
-    <div class="badge">🛞 AI-Powered</div>
+    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+      <div class="badge">🛞 AI-Powered</div>
+      <a href="dashboard.html" class="badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; text-decoration: none; border: 1px solid rgba(99, 102, 241, 0.3);">📊 View Dashboard</a>
+    </div>
     <h1>Offroad Scene Segmentation</h1>
-    <p class="subtitle">Upload any offroad image and instantly visualize semantic segmentation — sky, trees, bushes, grass, and rocks.</p>
+    <p class="subtitle">High-fidelity 9-class AI segmentation — Sky, Water, Flowers, Trees, Bushes, Rocks, and more.</p>
   </header>
 
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" id="uploadTab">📁 File Upload</div>
+    <div class="tab" id="cameraTab">🎥 Live Camera</div>
+    <div class="tab" id="urlTab">🔗 Image URL</div>
+  </div>
+
   <!-- Upload Zone -->
-  <div class="upload-card" id="dropZone">
+  <div class="upload-card" id="uploadSection">
     <input type="file" id="fileInput" accept="image/*" />
     <div class="upload-icon">📷</div>
     <div class="upload-label">Drop your image here, or click to browse</div>
@@ -300,7 +445,27 @@
     <div class="file-name" id="fileName"></div>
   </div>
 
-  <!-- Run Button -->
+  <!-- Camera Zone -->
+  <div class="camera-container" id="cameraSection">
+    <video id="video" autoplay playsinline></video>
+    <div class="camera-actions">
+      <button class="btn-secondary" id="startCamBtn">Start Camera</button>
+      <button class="btn-segment" id="captureBtn" disabled>📸 Capture & Segment</button>
+    </div>
+  </div>
+
+  <!-- URL Zone -->
+  <div class="url-container" id="urlSection">
+    <div class="url-input-group">
+      <input type="url" id="urlInput" class="url-input" placeholder="Paste direct image link (https://...)" />
+      <button class="btn-segment" id="urlSegmentBtn">Segment</button>
+    </div>
+    <div class="upload-hint">Example: https://images.unsplash.com/photo-1541447271487-09612b3f49f7</div>
+  </div>
+
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <!-- Run Button (File Mode) -->
   <button class="btn-segment" id="segmentBtn" disabled>
     🔬 Run Segmentation
   </button>
@@ -335,7 +500,11 @@
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(34,139,34)"></div>Trees</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(0,255,127)"></div>Bushes</div>
       <div class="legend-item"><div class="legend-swatch" style="background:rgb(173,255,47)"></div>Grass</div>
-      <div class="legend-item"><div class="legend-swatch" style="background:rgb(139,69,19)"></div>Rocks</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(120,120,120)"></div>Rocks</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(0,105,148)"></div>Water</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(255,20,147)"></div>Flowers</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(189,183,107)"></div>Dry Bushes</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:rgb(210,180,140)"></div>Ground</div>
     </div>
   </div>
 
@@ -345,7 +514,10 @@
   const API_URL = 'http://127.0.0.1:8001/predict';
 
   const fileInput   = document.getElementById('fileInput');
-  const dropZone    = document.getElementById('dropZone');
+  const uploadSection= document.getElementById('uploadSection');
+  const cameraSection= document.getElementById('cameraSection');
+  const uploadTab    = document.getElementById('uploadTab');
+  const cameraTab    = document.getElementById('cameraTab');
   const fileName    = document.getElementById('fileName');
   const segmentBtn  = document.getElementById('segmentBtn');
   const spinner     = document.getElementById('spinner');
@@ -354,7 +526,51 @@
   const originalImg = document.getElementById('originalImg');
   const segmentedImg= document.getElementById('segmentedImg');
 
+  const video       = document.getElementById('video');
+  const canvas      = document.getElementById('canvas');
+  const startCamBtn = document.getElementById('startCamBtn');
+  const captureBtn  = document.getElementById('captureBtn');
+
   let selectedFile = null;
+
+  // ── Tab Switching ──────────────────────────────────────────────────
+  uploadTab.addEventListener('click', () => {
+    uploadTab.classList.add('active');
+    cameraTab.classList.remove('active');
+    urlTab.classList.remove('active');
+    uploadSection.style.display = 'block';
+    cameraSection.style.display = 'none';
+    urlSection.style.display = 'none';
+    segmentBtn.style.display = 'block';
+    results.style.display = 'none';
+    setStatus('');
+    stopCamera();
+  });
+
+  cameraTab.addEventListener('click', () => {
+    cameraTab.classList.add('active');
+    uploadTab.classList.remove('active');
+    urlTab.classList.remove('active');
+    uploadSection.style.display = 'none';
+    cameraSection.style.display = 'flex';
+    urlSection.style.display = 'none';
+    segmentBtn.style.display = 'none';
+    results.style.display = 'none';
+    setStatus('');
+  });
+
+  urlTab.addEventListener('click', () => {
+    urlTab.classList.add('active');
+    uploadTab.classList.remove('active');
+    cameraTab.classList.remove('active');
+    uploadSection.style.display = 'none';
+    cameraSection.style.display = 'none';
+    urlSection.style.display = 'flex';
+    segmentBtn.style.display = 'none';
+    results.style.display = 'none';
+    setStatus('');
+    stopCamera();
+  });
 
   // ── File selection ─────────────────────────────────────────────────
   fileInput.addEventListener('change', (e) => {
@@ -371,14 +587,14 @@
   }
 
   // ── Drag & drop ────────────────────────────────────────────────────
-  dropZone.addEventListener('dragover', (e) => {
+  uploadSection.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropZone.classList.add('drag-over');
+    uploadSection.classList.add('drag-over');
   });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', (e) => {
+  uploadSection.addEventListener('dragleave', () => uploadSection.classList.remove('drag-over'));
+  uploadSection.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('drag-over');
+    uploadSection.classList.remove('drag-over');
     handleFile(e.dataTransfer.files[0]);
   });
 
@@ -418,13 +634,154 @@
     } finally {
       spinner.style.display = 'none';
       segmentBtn.disabled = false;
+      captureBtn.disabled = false;
+      urlSegmentBtn.disabled = false;
     }
+  });
+
+  // ── URL Segmentation ───────────────────────────────────────────────
+  urlSegmentBtn.addEventListener('click', async () => {
+    const url = urlInput.value.trim();
+    if (!url) {
+      setStatus('❌ Please enter a valid URL', 'error');
+      return;
+    }
+
+    // UI: loading state
+    urlSegmentBtn.disabled = true;
+    spinner.style.display = 'block';
+    setStatus('Processing URL...', 'loading');
+    results.style.display = 'none';
+
+    try {
+      const response = await fetch('http://127.0.0.1:8001/predict-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(err.detail || 'Server error');
+      }
+
+      // We need the original image too for the "results" panels
+      // In URL mode, we just show the output image which is a composite
+      // But to maintain UI consistency, we set the same image to both for now
+      // or we can try to fetch the original separately.
+      // Easiest: The API returns the composite [Original | Mask | Overlay]
+      // So we can show that in the results.
+      
+      const blob = await response.blob();
+      const resultUrl = URL.createObjectURL(blob);
+      
+      originalImg.src = url; // Try to load original directly from URL
+      segmentedImg.src = resultUrl;
+
+      results.style.display = 'flex';
+      setStatus('✅ URL segmented!', 'success');
+
+    } catch (err) {
+      setStatus(`❌ Error: ${err.message}`, 'error');
+    } finally {
+      spinner.style.display = 'none';
+      urlSegmentBtn.disabled = false;
+    }
+  });
+
+  // ── Camera Logic ───────────────────────────────────────────────────
+  let stream = null;
+
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+      startCamBtn.textContent = 'Camera Active';
+      startCamBtn.disabled = true;
+      captureBtn.disabled = false;
+      setStatus('Webcam connected!', 'success');
+    } catch (err) {
+      setStatus('❌ Could not access webcam: ' + err.message, 'error');
+    }
+  }
+
+  function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+      startCamBtn.textContent = 'Start Camera';
+      startCamBtn.disabled = false;
+      captureBtn.disabled = true;
+    }
+  }
+
+  startCamBtn.addEventListener('click', startCamera);
+
+  captureBtn.addEventListener('click', () => {
+    // Canvas dimensions should match video stream
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw current frame to canvas (flipped if mirrored)
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Show capture as original image preview
+    originalImg.src = canvas.toDataURL('image/jpeg');
+
+    // UI: loading state
+    captureBtn.disabled = true;
+    spinner.style.display = 'block';
+    setStatus('Processing frame...', 'loading');
+    results.style.display = 'none';
+
+    // Convert to blob and send
+    canvas.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append('file', blob, 'capture.jpg');
+
+      try {
+        const response = await fetch(API_URL, { method: 'POST', body: formData });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ detail: response.statusText }));
+          throw new Error(err.detail || 'Server error');
+        }
+
+        const resultBlob = await response.blob();
+        segmentedImg.src = URL.createObjectURL(resultBlob);
+
+        results.style.display = 'flex';
+        setStatus('✅ Frame segmented!', 'success');
+      } catch (err) {
+        setStatus(`❌ Error: ${err.message}`, 'error');
+      } finally {
+        spinner.style.display = 'none';
+        captureBtn.disabled = false;
+      }
+    }, 'image/jpeg');
   });
 
   function setStatus(msg, cls = '') {
     statusEl.textContent = msg;
     statusEl.className = 'status ' + cls;
   }
+
+  // Interactive Spotlight & Parallax
+  window.addEventListener('mousemove', e => {
+    const x = e.clientX;
+    const y = e.clientY;
+    document.body.style.setProperty('--mouse-x', `${x}px`);
+    document.body.style.setProperty('--mouse-y', `${y}px`);
+
+    // Subtle Parallax for the wrapper
+    const moveX = (x - window.innerWidth / 2) * 0.01;
+    const moveY = (y - window.innerHeight / 2) * 0.01;
+    document.querySelector('.wrapper').style.transform = `translate(${moveX}px, ${moveY}px)`;
+  });
 </script>
+<div class="spotlight"></div>
 </body>
 </html>
