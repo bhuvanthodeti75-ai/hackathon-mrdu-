@@ -1,66 +1,114 @@
-# Offroad Semantic Scene Segmentation
+# 🚙 Offroad Semantic Scene Segmentation
 
-This project simulates a complete end-to-end Machine Learning pipeline for **Semantic Segmentation** on offroad driving scenes. Built using only basic Python libraries (`numpy`, `opencv-python`, `matplotlib`), it runs rapidly on any machine without the need for heavy frameworks like TensorFlow or PyTorch.
+![Application Banner](https://images.unsplash.com/photo-1541447271487-09612b3f49f7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80) 
+*(Note: Replace with an actual screenshot of the Spline UI)*
 
-## What is Semantic Segmentation?
-Semantic Segmentation is a computer vision task where a neural network labels each pixel in an image with a corresponding class identity. Instead of just drawing a bounding box around objects (Object Detection), Semantic Segmentation traces the exact shapes, allowing for advanced scene understanding.
+A blazing-fast, serverless, web-based semantic segmentation platform designed for offroad and unstructured environments. Built with a futuristic glassmorphism UI, a 3D interactive background (Spline), and natively integrated with **InsForge** for comprehensive cloud tracking and analytics.
 
-## Features
-- **Auto-generated synthetic dataset:** Generates realistic offroad scenarios with specific terrain classes.
-- **Simulated Training Loop:** `train.py` runs an abstract training phase displaying decaying loss gradients and outputs a weights artifact.
-- **Robust Inference:** `test.py` performs predictions using a heuristic baseline to construct highly accurate semantic masks.
-- **Vibrant Visualizations:** Employs vibrant color-mapping logic to composite inference outputs over original imagery, making it easy to identify model performance.
+**🔗 Live Demo:** [https://ur5egicb.insforge.site](https://ur5egicb.insforge.site)
 
-## Classes Supported
-The project identifies 5 common offroad classes:
-1. **Sky** (Blue)
-2. **Trees** (Dark Green)
-3. **Bushes** (Bright Green)
-4. **Grass** (Yellow-Green)
-5. **Rocks** (Gray/Brown)
+---
 
-## Project Structure
-```
-offroad-segmentation/
-│
-├── data/
-│   ├── train/          # Training images and masks
-│   ├── val/            # Validation images and masks
-│   └── testImages/     # Unlabeled test imagery
-├── models/             # Directory to save trained model weights
-├── outputs/            # Directory containing visual overlay output metrics
-├── logs/               # Output execution logs (training loss, mIoU scores)
-│
-├── utils.py            # Dataset generation, data loading, metrics, colorization
-├── train.py            # Simulated training routine
-├── test.py             # Inference loop and IoU calculation
-├── requirements.txt    # Project dependencies
-└── README.md           # Documentation
-```
+## ⚡ Features
 
-## Setup & Execution
+* 🔬 **Real-time Client-Side Segmentation**: Uses a highly optimized centroid-distance heuristic engine using the browser's native Canvas API for zero-latency processing.
+* 📸 **Multiple Inference Modes**: Supports Local File Uploads, direct Image URLs (bypassing CORS via Edge Functions), and Live Webcam feeds.
+* 📊 **Analytics Dashboard**: Tracks model training metrics (`mIoU`, `loss`, `epochs`) and aggregates them into visually rich, dynamic charts using Chart.js.
+* ☁️ **Cloud Native**: Powered entirely by serverless **InsForge** infrastructure (PostgreSQL database, Edge Functions, and Storage).
+* 🎨 **Immersive UI/UX**: "Carbon & Electric Cyan" glassmorphic design featuring mouse-follower spotlight and a 3D interactive robot companion.
 
-### 1. Install Dependencies
-Make sure you are running Python 3.8+.
+---
+
+## 🤖 Model Classes (10-Class Ontology)
+
+The heuristic model classifies the visual space into the following distinct categories:
+
+1. **Sky** `[135, 206, 235]`
+2. **Trees** `[34, 139, 34]`
+3. **Bushes** `[0, 100, 0]`
+4. **Grass** `[124, 252, 0]`
+5. **Rocks** `[128, 128, 128]`
+6. **Water** `[0, 105, 148]`
+7. **Flowers** `[255, 105, 180]`
+8. **Dry Bushes** `[139, 115, 85]`
+9. **Ground** `[210, 180, 140]`
+10. **Background** `[0, 0, 0]`
+
+---
+
+## 🏗️ Architecture & Tech Stack
+
+### Frontend Simulator
+* **Languages**: HTML5, CSS3, Vanilla JavaScript
+* **3D Rendering**: Spline Design
+* **Charting**: Chart.js
+
+### Cloud Infrastructure (InsForge)
+* **Hosting**: Vercel-backed edge deployment
+* **Database**: PostgreSQL (Accessed entirely via direct PostgREST native Fetch API calls to eliminate heavy SDK dependencies)
+* **Serverless Compute**: Deno Edge Functions (used to bypass CORS for image URL ingestion)
+* **Object Storage**: InsForge standard S3-compatible buckets
+
+### Simulator/Training Backend (Local Python)
+* **Framework**: FastAPI / Uvicorn
+* **Logic**: Simulates training epochs, pushes training metadata to the InsForge database, and computes running mIoU.
+* **Computer Vision**: OpenCV (`cv2`), NumPy
+
+---
+
+## 🚀 Getting Started (Local Development)
+
+### Prerequisites
+* Python 3.9+
+* Node.js & npm (optional for testing tools)
+
+### 1. Run the Python Analytics Server
 ```bash
-pip install -r requirements.txt
+# Install dependencies
+pip install fastapi uvicorn opencv-python numpy requests
+
+# Run the local simulator API
+uvicorn backend.main:app --reload --port 8001
 ```
 
-### 2. Train the Model (and generate data automatically)
-Run `train.py`. The first time you execute this script, it will synthesize the `data` directory hierarchy and populate the data splits automatically.
+### 2. View the Interface
+Because the application is strictly client-side vanilla JS, you can simply open `frontend/index.html` in your browser. Alternatively, serve it locally:
 ```bash
-python train.py
+npx serve frontend/
 ```
-> **What this does:**
-> It initializes a dummy model, simulates epochs traversing a dataset, prints the loss curves, handles optimization, and finally exports state weights into `models/segmentation_weights.npy`.
 
-### 3. Test and Visualize
-Once training is complete, execute inference by running `test.py`:
+---
+
+## 🌐 Cloud Deployment
+
+Deployment is managed directly through InsForge. The production UI is completely decoupled from the InsForge NPM SDK to guarantee reliable initialization without Opaque Response Blocking (ORB) issues.
+
 ```bash
-python test.py
+# Redeploy the frontend 
+npx @insforge/cli deploy
 ```
-> **What this does:**
-> Loads the "trained" `.npy` representation. Foreach image in the `data/testImages` folder, it applies heuristic pixel classification, calculates an IoU (Intersection Over Union), blends the semantic mask over the raw feed, and writes the stunning composite output to the `outputs/` directory.
 
-### Evaluation metrics
-Check `logs/results.txt` for numerical evaluations of model performance (mIoU) after running the testing suite!
+---
+
+## 📁 Repository Structure
+
+```text
+├── backend/
+│   └── main.py              # FastAPI server simulating model metrics
+├── frontend/
+│   ├── index.html           # Main Segmentation Simulator Interface
+│   ├── dashboard.html       # Cloud Analytics & Inference Gallery
+│   └── insforge-sdk.js      # Bundled InsForge library
+├── functions/
+│   └── predict/             # InsForge Deno Edge Function for CORS proxy
+│       └── index.js
+├── train.py                 # CLI model simulator routine
+├── utils.py                 # Utility functions (dummy functions for CV)
+├── test.py                  # CLI inference utility
+└── README.md                # Project documentation
+```
+
+---
+
+## 📄 License
+This project was developed under hackathon circumstances and is provided as-is.

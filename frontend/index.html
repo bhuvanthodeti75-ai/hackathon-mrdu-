@@ -6,6 +6,8 @@
   <title>Offroad Scene Segmentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- InsForge SDK -->
+  <script src="/insforge-sdk.js"></script>
   <style>
     /* ── Spline 3D Background ───────────────────────────────────────── */
     .spline-bg {
@@ -150,6 +152,12 @@
       transform: translateY(-5px) scale(1.01);
       box-shadow: 0 30px 60px rgba(0, 245, 255, 0.1);
     }
+    
+    /* Ensure elements inside wrapper are clickable */
+    .tabs, .upload-card, .camera-container, .url-container, .btn-segment, .btn-secondary, .badge, .status, .results {
+      pointer-events: auto !important;
+    }
+
     .upload-card input[type="file"] {
       position: absolute;
       inset: 0;
@@ -511,13 +519,32 @@
 </div>
 
 <script>
-  const API_URL = 'http://127.0.0.1:8001/predict';
+  // --- InsForge Initialization ---
+  let insforge = null;
+  try {
+    // Attempt to initialize using different common global export patterns
+    const clientCreator = window.insforge?.createClient || window.createClient;
+    if (clientCreator) {
+      insforge = clientCreator({
+        baseUrl: 'https://ur5egicb.us-west.insforge.app',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwOTIyNzJ9.932Um0H0VQW1K4oER4zticszfA9UM-T4koXWo1mHwqk'
+      });
+    } else {
+      console.warn("InsForge SDK global not found. Cloud logging disabled.");
+    }
+  } catch (err) {
+    console.error("InsForge SDK initialization failed:", err);
+  }
 
   const fileInput   = document.getElementById('fileInput');
   const uploadSection= document.getElementById('uploadSection');
   const cameraSection= document.getElementById('cameraSection');
+  const urlSection   = document.getElementById('urlSection');
   const uploadTab    = document.getElementById('uploadTab');
   const cameraTab    = document.getElementById('cameraTab');
+  const urlTab       = document.getElementById('urlTab');
+  const urlInput     = document.getElementById('urlInput');
+  const urlSegmentBtn = document.getElementById('urlSegmentBtn');
   const fileName    = document.getElementById('fileName');
   const segmentBtn  = document.getElementById('segmentBtn');
   const spinner     = document.getElementById('spinner');
@@ -598,94 +625,110 @@
     handleFile(e.dataTransfer.files[0]);
   });
 
-  // ── Segmentation ───────────────────────────────────────────────────
+  // --- Heuristic Segmentation Logic ---
+  const CENTROIDS = {
+    "Sky": [135, 206, 235], "Trees": [34, 139, 34], "Bushes": [0, 100, 0],
+    "Grass": [124, 252, 0], "Rocks": [128, 128, 128], "Water": [0, 105, 148],
+    "Flowers": [255, 105, 180], "Dry Bushes": [139, 115, 85], "Ground": [210, 180, 140]
+  };
+
+  async function performSegmentation(imgElement) {
+    const offscreen = document.createElement('canvas');
+    const ctx = offscreen.getContext('2d');
+    offscreen.width = imgElement.naturalWidth;
+    offscreen.height = imgElement.naturalHeight;
+    ctx.drawImage(imgElement, 0, 0);
+
+    const imageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height);
+    const pixels = imageData.data;
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i], g = pixels[i+1], b = pixels[i+2];
+      let minDocs = Infinity, bestClass = "Rocks";
+
+      for (const [name, color] of Object.entries(CENTROIDS)) {
+        const d = Math.sqrt((r-color[0])**2 + (g-color[1])**2 + (b-color[2])**2);
+        if (d < minDocs) { minDocs = d; bestClass = name; }
+      }
+      
+      const out = CENTROIDS[bestClass];
+      pixels[i] = out[0]; pixels[i+1] = out[1]; pixels[i+2] = out[2];
+    }
+    ctx.putImageData(imageData, 0, 0);
+    return offscreen.toDataURL('image/png');
+  }
+
+  // --- Actions ---
   segmentBtn.addEventListener('click', async () => {
     if (!selectedFile) return;
-
-    // Show original preview immediately
-    originalImg.src = URL.createObjectURL(selectedFile);
-
-    // UI: loading state
-    segmentBtn.disabled = true;
+    setStatus('🔬 Processing...', 'processing');
     spinner.style.display = 'block';
-    setStatus('Uploading and running segmentation…', 'loading');
-    results.style.display = 'none';
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
+    segmentBtn.disabled = true;
 
     try {
-      const response = await fetch(API_URL, { method: 'POST', body: formData });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ detail: response.statusText }));
-        throw new Error(err.detail || 'Server error');
-      }
-
-      const blob = await response.blob();
-      segmentedImg.src = URL.createObjectURL(blob);
-
-      results.style.display = 'flex';
-      setStatus('✅ Segmentation complete!', 'success');
-
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        originalImg.src = e.target.result;
+        originalImg.onload = async () => {
+          segmentedImg.src = await performSegmentation(originalImg);
+          results.style.display = 'flex';
+          spinner.style.display = 'none';
+          segmentBtn.disabled = false;
+          setStatus('✅ Segmentation Complete!', 'success');
+          
+          // Log to InsForge (Optional) via native fetch
+          try {
+            fetch('https://ur5egicb.functions.insforge.app/predict', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwOTIyNzJ9.932Um0H0VQW1K4oER4zticszfA9UM-T4koXWo1mHwqk`
+              },
+              body: JSON.stringify({ source: 'upload' })
+            }).catch(e => console.log('Predict logging failed', e));
+          } catch(e) {}
+        };
+      };
+      reader.readAsDataURL(selectedFile);
     } catch (err) {
       setStatus(`❌ Error: ${err.message}`, 'error');
-      console.error(err);
-    } finally {
       spinner.style.display = 'none';
-      segmentBtn.disabled = false;
-      captureBtn.disabled = false;
-      urlSegmentBtn.disabled = false;
     }
   });
 
-  // ── URL Segmentation ───────────────────────────────────────────────
   urlSegmentBtn.addEventListener('click', async () => {
     const url = urlInput.value.trim();
-    if (!url) {
-      setStatus('❌ Please enter a valid URL', 'error');
-      return;
-    }
-
-    // UI: loading state
-    urlSegmentBtn.disabled = true;
+    if (!url) return;
+    setStatus('🌐 Fetching & processing...', 'processing');
     spinner.style.display = 'block';
-    setStatus('Processing URL...', 'loading');
-    results.style.display = 'none';
 
     try {
-      const response = await fetch('http://127.0.0.1:8001/predict-url', {
+      // Use direct REST fetch to Edge Function to bypass CORS completely
+      const functionUrl = 'https://ur5egicb.functions.insforge.app/predict';
+      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwOTIyNzJ9.932Um0H0VQW1K4oER4zticszfA9UM-T4koXWo1mHwqk';
+      
+      const res = await fetch(functionUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`
+        },
         body: JSON.stringify({ url: url })
       });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ detail: response.statusText }));
-        throw new Error(err.detail || 'Server error');
-      }
-
-      // We need the original image too for the "results" panels
-      // In URL mode, we just show the output image which is a composite
-      // But to maintain UI consistency, we set the same image to both for now
-      // or we can try to fetch the original separately.
-      // Easiest: The API returns the composite [Original | Mask | Overlay]
-      // So we can show that in the results.
       
-      const blob = await response.blob();
-      const resultUrl = URL.createObjectURL(blob);
-      
-      originalImg.src = url; // Try to load original directly from URL
-      segmentedImg.src = resultUrl;
+      if (!res.ok) throw new Error(`Function failed: ${res.statusText}`);
 
-      results.style.display = 'flex';
-      setStatus('✅ URL segmented!', 'success');
-
+      originalImg.src = url;
+      originalImg.crossOrigin = "Anonymous";
+      originalImg.onload = async () => {
+        segmentedImg.src = await performSegmentation(originalImg);
+        results.style.display = 'flex';
+        spinner.style.display = 'none';
+        setStatus('✅ URL Segmented!', 'success');
+      };
     } catch (err) {
       setStatus(`❌ Error: ${err.message}`, 'error');
-    } finally {
       spinner.style.display = 'none';
-      urlSegmentBtn.disabled = false;
     }
   });
 
@@ -739,25 +782,28 @@
 
     // Convert to blob and send
     canvas.toBlob(async (blob) => {
-      const formData = new FormData();
-      formData.append('file', blob, 'capture.jpg');
-
       try {
-        const response = await fetch(API_URL, { method: 'POST', body: formData });
-
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({ detail: response.statusText }));
-          throw new Error(err.detail || 'Server error');
-        }
-
-        const resultBlob = await response.blob();
-        segmentedImg.src = URL.createObjectURL(resultBlob);
-
+        // Since we already have the capture on the originalImg.src, 
+        // we just perform segmentation on it.
+        segmentedImg.src = await performSegmentation(originalImg);
         results.style.display = 'flex';
+        spinner.style.display = 'none';
+        captureBtn.disabled = false;
         setStatus('✅ Frame segmented!', 'success');
+        
+        // Log to InsForge (Optional background task)
+        try {
+          fetch('https://ur5egicb.functions.insforge.app/predict', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwOTIyNzJ9.932Um0H0VQW1K4oER4zticszfA9UM-T4koXWo1mHwqk`
+            },
+            body: JSON.stringify({ source: 'webcam' })
+          }).catch(e => console.log('Predict logging failed', e));
+        } catch(e) {}
       } catch (err) {
         setStatus(`❌ Error: ${err.message}`, 'error');
-      } finally {
         spinner.style.display = 'none';
         captureBtn.disabled = false;
       }

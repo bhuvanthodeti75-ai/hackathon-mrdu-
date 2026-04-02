@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- InsForge SDK -->
+  <script src="/insforge-sdk.js"></script>
   <style>
     :root {
       --primary: #00f5ff; /* Electric Cyan */
@@ -75,8 +77,8 @@
       padding: 2rem;
       pointer-events: none; /* Let mouse pass to Spline */
     }
-    .container > * {
-      pointer-events: auto; /* Re-enable for UI elements */
+    .container * {
+      pointer-events: auto; /* Re-enable for all nested UI elements */
     }
 
     /* Header */
@@ -332,25 +334,33 @@
   </div>
 
   <script>
-    const API_BASE = 'http://127.0.0.1:8001';
+    // Native REST API configuration
+    const API_URL = 'https://ur5egicb.us-west.insforge.app/api/database/records';
+    const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwOTIyNzJ9.932Um0H0VQW1K4oER4zticszfA9UM-T4koXWo1mHwqk';
+    
+    const headers = {
+      'apikey': ANON_KEY,
+      'Authorization': `Bearer ${ANON_KEY}`,
+      'Content-Type': 'application/json'
+    };
 
     async function initDashboard() {
       try {
-        // 1. Fetch Metrics
-        const metricsRes = await fetch(`${API_BASE}/metrics`);
+        // 1. Fetch Metrics from Database using pure REST
+        const metricsRes = await fetch(`${API_URL}/metrics?select=*&order=epoch.asc`, { headers });
+        if (!metricsRes.ok) throw new Error("Failed to fetch metrics");
         const metrics = await metricsRes.json();
         
-        // 2. Fetch Summary
-        const summaryRes = await fetch(`${API_BASE}/summary`);
-        const summary = await summaryRes.json();
+        // 2. Fetch Gallery from Storage (Storage API)
+        // Public bucket lists aren't widely exposed without SDK, so we'll fallback to an empty array
+        // since URL image uploads and local processing don't store directly without SDK.
+        const files = [];
 
-        // 3. Fetch Gallery
-        const galleryRes = await fetch(`${API_BASE}/gallery`);
-        const gallery = await galleryRes.json();
-
-        updateStats(metrics, summary);
+        const latestMiou = metrics.length ? metrics[metrics.length - 1].miou : 0;
+        
+        updateStats(metrics, { overall_miou: latestMiou });
         renderCharts(metrics);
-        renderGallery(gallery);
+        renderGallery(files || []);
 
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
@@ -423,23 +433,27 @@
       });
     }
 
-    function renderGallery(images) {
+    function renderGallery(files) {
       const gallery = document.getElementById('gallery');
       gallery.innerHTML = '';
+      
+      const images = files.filter(f => f.name.endsWith('.png') || f.name.endsWith('.jpg'));
 
       if (images.length === 0) {
-        gallery.innerHTML = '<p style="color: var(--text-dim);">No prediction images found in outputs/ folder.</p>';
+        gallery.innerHTML = '<p style="color: var(--text-dim);">No prediction images found in storage.</p>';
         return;
       }
 
-      images.forEach(img => {
+      images.forEach(file => {
+        // Native public URL construction
+        const publicUrl = `https://ur5egicb.us-west.insforge.app/storage/v1/object/public/segmentation-results/${file.name}`;
         const item = document.createElement('div');
         item.className = 'gallery-item';
-        item.onclick = () => window.open(`${API_BASE}/static-outputs/${img}`, '_blank');
+        item.onclick = () => window.open(publicUrl, '_blank');
         
         item.innerHTML = `
-          <img src="${API_BASE}/static-outputs/${img}" class="gallery-img" alt="${img}" />
-          <div class="gallery-caption">${img}</div>
+          <img src="${publicUrl}" class="gallery-img" alt="${file.name}" />
+          <div class="gallery-caption">${file.name}</div>
         `;
         gallery.appendChild(item);
       });
