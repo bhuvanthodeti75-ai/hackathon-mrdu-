@@ -1,7 +1,4 @@
-# 🚙 Offroad Semantic Scene Segmentation
-
-![Application Banner](<img width="1832" height="883" alt="image" src="https://github.com/user-attachments/assets/5180b1d4-e013-4283-b63c-4be922ad6931" />
-) 
+# 🚙 Offroad Semantic Scene Segmentation 
 
 
 A blazing-fast, serverless, web-based semantic segmentation platform designed for offroad and unstructured environments. Built with a futuristic glassmorphism UI, a 3D interactive background (Spline), and natively integrated with **InsForge** for comprehensive cloud tracking and analytics.
