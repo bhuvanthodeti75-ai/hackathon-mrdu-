@@ -110,3 +110,6 @@ npx @insforge/cli deploy
 
 ## 📄 License
 This project was developed under hackathon circumstances and is provided as-is.
+
+About 👉IOU👈
+The trained model achieved a mean IoU (mIoU) of 0.922 on the test dataset, reflecting high precision in segmentation and strong alignment between predicted masks and ground truth annotations.
